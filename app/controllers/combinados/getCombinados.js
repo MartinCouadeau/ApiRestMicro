@@ -1,19 +1,16 @@
 import axios from 'axios';
 
 export async function chistesCombinados(req, res) {
-  // Configuración de timeouts
-  const apiTimeout = 10000; // 10 segundos para APIs externas
-  const totalTimeout = 15000; // 15 segundos máximo para toda la operación
+  const apiTimeout = 10000;
+  const totalTimeout = 15000;
 
   try {
     console.log('🔄 Iniciando obtención de chistes combinados...');
 
-    // Timeout global para toda la operación
     const globalTimeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout: La operación completa tardó demasiado')), totalTimeout);
     });
 
-    // Lanzar peticiones en paralelo con timeout global
     const jokesPromise = Promise.all([
       getChuckNorrisJokes(5, apiTimeout),
       getDadJokes(5, apiTimeout)
@@ -24,7 +21,6 @@ export async function chistesCombinados(req, res) {
     console.log('✅ Chistes obtenidos exitosamente');
     console.log(`📊 Chuck Norris: ${chuckJokes.length} chistes, Dad Jokes: ${dadJokes.length} chistes`);
 
-    // Validar que tenemos al menos algunos chistes
     const chuckJokesValidos = chuckJokes.filter(joke => !joke.includes('no disponible'));
     const dadJokesValidos = dadJokes.filter(joke => !joke.includes('no disponible'));
 
@@ -36,7 +32,6 @@ export async function chistesCombinados(req, res) {
       });
     }
 
-    // Emparejar y combinar los resultados
     const combinedJokes = chuckJokes.map((chuckJoke, index) => {
       const dadJoke = dadJokes[index] || 'Chiste no disponible';
       
@@ -51,7 +46,6 @@ export async function chistesCombinados(req, res) {
       };
     });
 
-    // Estadísticas de la operación
     const estadisticas = {
       total_chistes: combinedJokes.length,
       chuck_exitosos: chuckJokesValidos.length,
@@ -71,7 +65,6 @@ export async function chistesCombinados(req, res) {
   } catch (error) {
     console.error('❌ Error combinando chistes:', error.message);
 
-    // Manejar diferentes tipos de errores
     if (error.message.includes('Timeout')) {
       return res.status(408).json({ 
         error: 'Timeout de la operación',
@@ -96,7 +89,6 @@ export async function chistesCombinados(req, res) {
       });
     }
 
-    // Error genérico del servidor
     res.status(500).json({ 
       error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? error.message : 'No se pudieron obtener los chistes combinados',
@@ -109,10 +101,9 @@ async function getChuckNorrisJokes(count, timeout) {
   const promises = Array.from({ length: count }, (_, index) =>
     axios.get('https://api.chucknorris.io/jokes/random', { 
       timeout,
-      validateStatus: (status) => status < 500 // No rechazar errores 4xx
+      validateStatus: (status) => status < 500
     })
       .then(response => {
-        // Validar estructura de respuesta
         if (!response.data || typeof response.data !== 'object') {
           throw new Error('Estructura de respuesta inválida de Chuck Norris API');
         }
@@ -144,7 +135,6 @@ async function getDadJokes(count, timeout) {
       validateStatus: (status) => status < 500
     })
       .then(response => {
-        // Validar estructura de respuesta
         if (!response.data || typeof response.data !== 'object') {
           throw new Error('Estructura de respuesta inválida de Dad Jokes API');
         }
@@ -166,7 +156,6 @@ async function getDadJokes(count, timeout) {
 }
 
 function combineJokeText(chuckJoke, dadJoke) {
-  // Si ambos chistes están disponibles, combinarlos creativamente
   if (!chuckJoke.includes('no disponible') && !dadJoke.includes('no disponible')) {
     const strategies = [
       () => `Mientras ${chuckJoke.toLowerCase().replace('chuck norris', 'él')}, también ${dadJoke.toLowerCase()}`,
@@ -180,7 +169,6 @@ function combineJokeText(chuckJoke, dadJoke) {
     return randomStrategy();
   }
 
-  // Si solo uno está disponible, devolver ese con contexto
   if (!chuckJoke.includes('no disponible')) {
     return `${chuckJoke} (Chuck Norris manda saludos)`;
   }
@@ -189,7 +177,6 @@ function combineJokeText(chuckJoke, dadJoke) {
     return `${dadJoke} - ¡Un clásico de papá!`;
   }
 
-  // Si ninguno está disponible
   return 'Lamentablemente, los servicios de chistes no están disponibles en este momento. ¡Intente nuevamente más tarde!';
 }
 

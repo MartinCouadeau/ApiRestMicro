@@ -1,24 +1,21 @@
 import { initDB } from './db.js';
 
-export const db = await initDB(); // db ya contiene la conexión
+export const db = await initDB();
 
 export async function populateDB() {
   const usuarios = ['Manolito', 'Pepe', 'Isabel', 'Pedro'];
   const tematicas = ['humor negro', 'humor amarillo', 'chistes verdes'];
 
-  // Insertar usuarios
   for (let nombre of usuarios) {
     const exists = await db.get('SELECT id FROM usuarios WHERE nombre = ?', nombre);
     if (!exists) await db.run('INSERT INTO usuarios(nombre) VALUES(?)', nombre);
   }
 
-  // Insertar temáticas
   for (let nombre of tematicas) {
     const exists = await db.get('SELECT id FROM tematicas WHERE nombre = ?', nombre);
     if (!exists) await db.run('INSERT INTO tematicas(nombre) VALUES(?)', nombre);
   }
 
-  // Insertar 3 chistes por usuario y temática
   for (let usuario of usuarios) {
     const u = await db.get('SELECT id FROM usuarios WHERE nombre = ?', usuario);
     for (let tematica of tematicas) {

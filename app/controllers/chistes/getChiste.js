@@ -2,14 +2,13 @@ import axios from 'axios';
 import { db } from '../../dbInit.js';
 
 export async function getChiste(req, res) {
-  // Configuración de timeouts
-  const dbTimeout = 8000; // 8 segundos para BD
-  const apiTimeout = 10000; // 10 segundos para APIs externas
+  const dbTimeout = 8000;
+  const apiTimeout = 10000;
 
   try {
     const { type } = req.params;
 
-    // Si no hay tipo, obtener chiste aleatorio de la base de datos
+
     if (!type) {
       const dbPromise = db.all('SELECT * FROM chistes');
       const timeoutPromise = new Promise((_, reject) => {
@@ -29,7 +28,6 @@ export async function getChiste(req, res) {
       return res.json(random);
     }
 
-    // Validar tipo de chiste
     if (!['Chuck', 'Dad'].includes(type)) {
       return res.status(400).json({ 
         error: 'Tipo de chiste no válido',
@@ -38,15 +36,13 @@ export async function getChiste(req, res) {
       });
     }
 
-    // Chuck Norris API
     if (type === 'Chuck') {
       try {
         const response = await axios.get('https://api.chucknorris.io/jokes/random', {
           timeout: apiTimeout,
-          validateStatus: status => status < 500 // Solo rechazar errores 5xx
+          validateStatus: status => status < 500 
         });
 
-        // Validar respuesta
         if (!response.data || !response.data.value) {
           throw new Error('Respuesta inválida de Chuck Norris API');
         }
@@ -60,7 +56,6 @@ export async function getChiste(req, res) {
       } catch (apiError) {
         console.error(`❌ Error en Chuck Norris API: ${apiError.message}`);
         
-        // Ofrecer fallback a base de datos
         const fallbackChistes = await db.all('SELECT * FROM chistes WHERE tematica_id IN (SELECT id FROM tematicas WHERE nombre LIKE "%negro%" OR nombre LIKE "%chuck%")');
         
         if (fallbackChistes.length > 0) {
@@ -76,7 +71,6 @@ export async function getChiste(req, res) {
       }
     }
 
-    // Dad Jokes API
     if (type === 'Dad') {
       try {
         const response = await axios.get('https://icanhazdadjoke.com/', {
@@ -88,7 +82,6 @@ export async function getChiste(req, res) {
           validateStatus: status => status < 500
         });
 
-        // Validar respuesta
         if (!response.data || !response.data.joke) {
           throw new Error('Respuesta inválida de Dad Jokes API');
         }
@@ -102,7 +95,6 @@ export async function getChiste(req, res) {
       } catch (apiError) {
         console.error(`❌ Error en Dad Jokes API: ${apiError.message}`);
         
-        // Ofrecer fallback a base de datos
         const fallbackChistes = await db.all('SELECT * FROM chistes WHERE tematica_id IN (SELECT id FROM tematicas WHERE nombre LIKE "%amarillo%" OR nombre LIKE "%dad%")');
         
         if (fallbackChistes.length > 0) {
@@ -121,7 +113,6 @@ export async function getChiste(req, res) {
   } catch (err) {
     console.error('💥 Error en getChiste:', err.message);
 
-    // Manejar diferentes tipos de errores
     if (err.message.includes('Timeout')) {
       return res.status(408).json({ 
         error: 'Timeout de la operación',
@@ -154,7 +145,6 @@ export async function getChiste(req, res) {
       });
     }
 
-    // Error genérico del servidor
     res.status(500).json({ 
       error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? err.message : 'Contacte al administrador',
@@ -163,7 +153,6 @@ export async function getChiste(req, res) {
   }
 }
 
-// Función auxiliar para mensajes de error de API
 function getApiErrorMessage(error) {
   if (axios.isAxiosError(error)) {
     if (error.code === 'ECONNABORTED') {

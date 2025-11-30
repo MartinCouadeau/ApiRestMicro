@@ -8,8 +8,8 @@ app.use(express.json());
 app.use(routes);
 
 try {
-  const db = await initDB();  // inicializa DB y crea tablas
-  await populateDB();         // llena datos iniciales
+  const db = await initDB();
+  await populateDB();
 
   app.listen(3001, () => {
     console.log('Server listening at http://localhost:3001/');

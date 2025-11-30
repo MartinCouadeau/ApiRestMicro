@@ -1,14 +1,12 @@
 import { db } from '../../dbInit.js';
 
 export async function updateChiste(req, res) {
-  // Configuración de timeout
-  const dbTimeout = 8000; // 8 segundos para operación de BD
+  const dbTimeout = 8000;
 
   try {
     const { id } = req.params;
     const { texto } = req.body;
 
-    // Validar ID del chiste
     if (!id || isNaN(parseInt(id)) || parseInt(id) <= 0) {
       return res.status(400).json({ 
         error: 'ID de chiste inválido',
@@ -17,7 +15,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Validar que el texto esté presente
     if (!texto) {
       return res.status(400).json({ 
         error: 'Falta el texto del chiste',
@@ -25,7 +22,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Validaciones específicas del texto
     if (typeof texto !== 'string') {
       return res.status(400).json({
         error: 'Formato de texto inválido',
@@ -51,7 +47,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Verificar que el chiste existe antes de actualizar
     const chisteExistente = await db.get('SELECT id, texto FROM chistes WHERE id = ?', parseInt(id));
     if (!chisteExistente) {
       return res.status(404).json({
@@ -61,7 +56,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Verificar si el texto es diferente al actual
     if (chisteExistente.texto === texto.trim()) {
       return res.status(200).json({
         mensaje: 'El chiste ya tiene el mismo texto',
@@ -71,12 +65,10 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Preparar timeout para la operación de BD
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout: La operación de actualización tardó demasiado')), dbTimeout);
     });
 
-    // Ejecutar actualización con timeout
     const dbOperation = db.run(
       'UPDATE chistes SET texto = ? WHERE id = ?', 
       texto.trim(), 
@@ -85,7 +77,6 @@ export async function updateChiste(req, res) {
 
     const result = await Promise.race([dbOperation, timeoutPromise]);
 
-    // Verificar que se actualizó efectivamente
     if (result.changes === 0) {
       return res.status(404).json({ 
         error: 'Chiste no encontrado durante la actualización',
@@ -94,7 +85,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Respuesta de éxito
     res.json({ 
       id: parseInt(id), 
       texto: texto.trim(),
@@ -107,7 +97,6 @@ export async function updateChiste(req, res) {
   } catch (err) {
     console.error('❌ Error en updateChiste:', err.message);
 
-    // Manejar diferentes tipos de errores
     if (err.message.includes('Timeout')) {
       return res.status(408).json({ 
         error: 'Timeout de la operación',
@@ -148,7 +137,6 @@ export async function updateChiste(req, res) {
       });
     }
 
-    // Error genérico del servidor
     res.status(500).json({ 
       error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? err.message : 'No se pudo actualizar el chiste',

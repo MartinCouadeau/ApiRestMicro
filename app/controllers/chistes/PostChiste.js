@@ -1,13 +1,11 @@
 import { db } from '../../dbInit.js';
 
 export async function postChiste(req, res) {
-  // Configuración de timeout
-  const dbTimeout = 8000; // 8 segundos para operación de BD
+  const dbTimeout = 8000;
 
   try {
     const { texto, usuario_id, tematica_id } = req.body;
 
-    // Validar que todos los campos obligatorios estén presentes
     if (!texto || !usuario_id || !tematica_id) {
       const camposFaltantes = [];
       if (!texto) camposFaltantes.push('texto');
@@ -21,7 +19,6 @@ export async function postChiste(req, res) {
       });
     }
 
-    // Validaciones específicas de cada campo
     if (typeof texto !== 'string' || texto.trim().length === 0) {
       return res.status(400).json({
         error: 'Texto inválido',
@@ -55,7 +52,6 @@ export async function postChiste(req, res) {
       });
     }
 
-    // Verificar que el usuario existe
     const usuarioExists = await db.get('SELECT id FROM usuarios WHERE id = ?', parseInt(usuario_id));
     if (!usuarioExists) {
       return res.status(404).json({
@@ -65,7 +61,6 @@ export async function postChiste(req, res) {
       });
     }
 
-    // Verificar que la temática existe
     const tematicaExists = await db.get('SELECT id FROM tematicas WHERE id = ?', parseInt(tematica_id));
     if (!tematicaExists) {
       return res.status(404).json({
@@ -75,12 +70,10 @@ export async function postChiste(req, res) {
       });
     }
 
-    // Preparar timeout para la operación de BD
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout: La operación de base de datos tardó demasiado')), dbTimeout);
     });
 
-    // Ejecutar inserción con timeout
     const dbOperation = db.run(
       'INSERT INTO chistes(texto, usuario_id, tematica_id) VALUES(?,?,?)',
       texto.trim(),
@@ -90,7 +83,6 @@ export async function postChiste(req, res) {
 
     const result = await Promise.race([dbOperation, timeoutPromise]);
 
-    // Respuesta de éxito
     res.status(201).json({ 
       id: result.lastID, 
       texto: texto.trim(),
@@ -103,7 +95,6 @@ export async function postChiste(req, res) {
   } catch (err) {
     console.error('❌ Error en postChiste:', err.message);
 
-    // Manejar diferentes tipos de errores
     if (err.message.includes('Timeout')) {
       return res.status(408).json({ 
         error: 'Timeout de la operación',
@@ -144,7 +135,6 @@ export async function postChiste(req, res) {
       });
     }
 
-    // Error genérico del servidor
     res.status(500).json({ 
       error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? err.message : 'No se pudo crear el chiste',

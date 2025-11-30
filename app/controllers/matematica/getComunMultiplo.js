@@ -1,11 +1,9 @@
 export async function getComunMultiplo(req, res) {
-  // Configuración de timeout para cálculos intensivos
-  const calculationTimeout = 5000; // 5 segundos para cálculos
+  const calculationTimeout = 5000;
 
   try {
     const { numbers } = req.query;
 
-    // Validar que el parámetro esté presente
     if (!numbers) {
       return res.status(400).json({ 
         error: 'Parámetro requerido faltante',
@@ -14,7 +12,6 @@ export async function getComunMultiplo(req, res) {
       });
     }
 
-    // Validar que el parámetro sea una cadena
     if (typeof numbers !== 'string') {
       return res.status(400).json({
         error: 'Formato de parámetro inválido',
@@ -23,29 +20,23 @@ export async function getComunMultiplo(req, res) {
       });
     }
 
-    // Preparar timeout para cálculos intensivos
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout: El cálculo del MCM tardó demasiado')), calculationTimeout);
     });
 
-    // Ejecutar procesamiento con timeout
     const processingPromise = (async () => {
-      // Convertir y validar números
       const numerosArray = numbers.split(',').map((num, index) => {
         const numStr = num.trim();
         
-        // Validar que no esté vacío
         if (numStr === '') {
           throw new Error(`Elemento vacío en la posición ${index + 1}`);
         }
 
-        // Validar que sea un número válido
         const numero = parseInt(numStr, 10);
         if (isNaN(numero)) {
           throw new Error(`"${numStr}" no es un número válido en la posición ${index + 1}`);
         }
 
-        // Validar rango del número
         if (numero <= 0) {
           throw new Error(`Número no positivo: "${numStr}" en la posición ${index + 1}. Todos los números deben ser enteros positivos`);
         }
@@ -57,7 +48,6 @@ export async function getComunMultiplo(req, res) {
         return numero;
       });
 
-      // Validar cantidad de números
       if (numerosArray.length === 0) {
         throw new Error('Debe proporcionar al menos un número');
       }
@@ -66,10 +56,8 @@ export async function getComunMultiplo(req, res) {
         throw new Error('Demasiados números. El máximo permitido es 20');
       }
 
-      // Calcular MCM
       const mcm = calcularMCMArray(numerosArray);
 
-      // Validar que el resultado no sea demasiado grande
       if (!Number.isSafeInteger(mcm)) {
         throw new Error('El mínimo común múltiplo calculado es demasiado grande para ser representado con precisión');
       }
@@ -83,7 +71,6 @@ export async function getComunMultiplo(req, res) {
 
     const resultado = await Promise.race([processingPromise, timeoutPromise]);
 
-    // Respuesta de éxito
     res.json({
       ...resultado,
       timestamp: new Date().toISOString(),
@@ -93,7 +80,6 @@ export async function getComunMultiplo(req, res) {
   } catch (err) {
     console.error('❌ Error en getComunMultiplo:', err.message);
 
-    // Manejar diferentes tipos de errores
     if (err.message.includes('Timeout')) {
       return res.status(408).json({ 
         error: 'Timeout del cálculo',
@@ -124,7 +110,6 @@ export async function getComunMultiplo(req, res) {
       });
     }
 
-    // Error genérico del servidor
     res.status(500).json({ 
       error: 'Error interno del servidor',
       detalles: process.env.NODE_ENV === 'development' ? err.message : 'No se pudo calcular el mínimo común múltiplo',
@@ -134,7 +119,6 @@ export async function getComunMultiplo(req, res) {
 }
 
 function calcularMCD(a, b) {
-  // Usar el algoritmo de Euclides
   let num1 = Math.abs(a);
   let num2 = Math.abs(b);
   
@@ -150,11 +134,9 @@ function calcularMCD(a, b) {
 function calcularMCM(a, b) {
   if (a === 0 || b === 0) return 0;
   
-  // Usar la relación: MCM(a, b) = (a * b) / MCD(a, b)
   const mcd = calcularMCD(a, b);
   const mcm = (a * b) / mcd;
   
-  // Verificar overflow
   if (!Number.isSafeInteger(mcm)) {
     throw new Error('El cálculo del MCM resultó en un número demasiado grande');
   }
