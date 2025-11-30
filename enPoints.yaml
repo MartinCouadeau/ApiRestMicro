@@ -1,0 +1,114 @@
+openapi: 3.0.0
+info:
+  title: API de Chistes y Matemática
+  version: 1.0.0
+  description: API REST que permite obtener chistes, gestionar chistes almacenados en base de datos y realizar operaciones matemáticas.
+
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /chistes:
+    get:
+      summary: Devuelve un chiste aleatorio de la base de datos
+      responses:
+        '200':
+          description: Chiste obtenido
+    post:
+      summary: Guarda un nuevo chiste
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                texto:
+                  type: string
+      responses:
+        '201':
+          description: Chiste guardado
+
+  /chistes/{type}:
+    get:
+      summary: Devuelve un chiste de Chuck Norris o Dad Joke según el parámetro
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+            enum: [Chuck, Dad]
+      responses:
+        '200':
+          description: Chiste obtenido
+        '400':
+          description: Tipo inválido
+
+  /chistes/{number}:
+    put:
+      summary: Actualiza un chiste por su número/ID
+      parameters:
+        - in: path
+          name: number
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                texto:
+                  type: string
+      responses:
+        '200':
+          description: Chiste actualizado
+
+    delete:
+      summary: Elimina un chiste por su número/ID
+      parameters:
+        - in: path
+          name: number
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Chiste eliminado
+
+  /chistes/emparejados:
+    get:
+      summary: Devuelve 5 chistes Chuck y 5 Dad emparejados creativamente
+      responses:
+        '200':
+          description: Lista de chistes emparejados
+
+  /matematica/mcm:
+    get:
+      summary: Calcula el MCM de una lista de números
+      parameters:
+        - in: query
+          name: numbers
+          required: true
+          schema:
+            type: string
+            example: "4,6,8"
+      responses:
+        '200':
+          description: Resultado del MCM
+
+  /matematica/sumar:
+    get:
+      summary: Devuelve el número recibido + 1
+      parameters:
+        - in: query
+          name: number
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Resultado de la suma
